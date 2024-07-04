@@ -49,6 +49,11 @@ class telegramController extends Controller
             $responseText = 'The group ID is: ' . $chatId;
             $this->sendMessage($client, $chatId, $responseText);
         }
+        if (strpos($text, 'jacob') !== false) {
+            $response = $client->get('https://jsonplaceholder.typicode.com/posts/1');
+            $responseText = json_decode($response->getBody(), true)['title'];
+            $this->sendMessage($client, $chatId, $responseText);
+        }
     }
 
     protected function sendMessage($client, $chatId, $text)
