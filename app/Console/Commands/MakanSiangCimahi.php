@@ -32,7 +32,7 @@ class MakanSiangCimahi extends Command
         $apiUrl = "https://api.telegram.org/bot$apiToken/";
         $client = new Client(['base_uri' => $apiUrl]);
 
-        $chatId = "-4267585793";
+        $chatId = "-1001309342664";
         $tanggalHariIni = date('Y-m-d');
         $question = "Absen Makan {$tanggalHariIni}";
         $options = $this->getHariIniOptions();

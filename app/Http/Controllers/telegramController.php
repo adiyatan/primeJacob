@@ -1,20 +1,21 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
 use GuzzleHttp\Client;
 
-class telegramController extends Controller
+class TelegramController extends Controller
 {
     protected $telegramApiUrl;
-    protected $apiToken;
 
     public function __construct()
     {
-        $this->telegramApiUrl = getenv('TELEGRAM_API_URL');
+        $apiToken = getenv('TELEGRAM_API_URL');
+        if ($apiToken === false) {
+            throw new \Exception("TELEGRAM_API_URL environment variable is not set.");
+        }
+        $this->telegramApiUrl = "https://api.telegram.org/bot$apiToken/";
     }
 
     public function setWebhook()
@@ -43,16 +44,22 @@ class telegramController extends Controller
     {
         $client = new Client();
         $chatId = $message['chat']['id'];
-        $text = $message['text'];
 
-        if ($text === '/chekgrupID') {
-            $responseText = 'The group ID is: ' . $chatId;
-            $this->sendMessage($client, $chatId, $responseText);
-        }
-        if (strpos($text, 'jacob') !== false) {
-            $response = $client->get('https://jsonplaceholder.typicode.com/posts/1');
-            $responseText = json_decode($response->getBody(), true)['title'];
-            $this->sendMessage($client, $chatId, $responseText);
+        // Check if the message contains text
+        if (isset($message['text'])) {
+            $text = $message['text'];
+
+            if ($text === '/chekgrupID') {
+                $responseText = 'The group ID is: ' . $chatId;
+                $this->sendMessage($client, $chatId, $responseText);
+            }
+            if (strpos(strtolower($text), 'jacob') !== false) {
+                $response = $client->get('https://jsonplaceholder.typicode.com/posts/1');
+                $responseText = json_decode($response->getBody(), true)['title'];
+                $this->sendMessage($client, $chatId, $responseText);
+            }
+        } else {
+            Log::info('Received message without text:', $message);
         }
     }
 
