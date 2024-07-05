@@ -1,26 +1,37 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use GuzzleHttp\Client;
+use GeminiAPI\Client;
+use GeminiAPI\Resources\Parts\TextPart;
 
 class TelegramController extends Controller
 {
     protected $telegramApiUrl;
+    protected $geminiApiKey;
+    protected $geminiClient;
 
     public function __construct()
     {
-        $apiToken = getenv('TELEGRAM_API_URL');
-        if ($apiToken === false) {
+        $telegramApiToken = getenv('TELEGRAM_API_URL');
+        $this->geminiApiKey = getenv('GEMINI_API_KEY');
+        
+        if ($telegramApiToken === false) {
             throw new \Exception("TELEGRAM_API_URL environment variable is not set.");
         }
-        $this->telegramApiUrl = "https://api.telegram.org/bot$apiToken/";
+        if ($this->geminiApiKey === false) {
+            throw new \Exception("GEMINI_API_KEY environment variable is not set.");
+        }
+
+        $this->telegramApiUrl = "https://api.telegram.org/bot$telegramApiToken/";
+        $this->geminiClient = new Client($this->geminiApiKey); // Initialize Gemini client
     }
 
     public function setWebhook()
     {
-        $client = new Client();
+        $client = new \GuzzleHttp\Client();
         $response = $client->post($this->telegramApiUrl . 'setWebhook', [
             'json' => ['url' => route('api.setWebhook')]
         ]);
@@ -42,10 +53,10 @@ class TelegramController extends Controller
 
     protected function handleMessage($message)
     {
-        $client = new Client();
+        $client = new \GuzzleHttp\Client();
         $chatId = $message['chat']['id'];
+        $userName = $message['from']['first_name'];
 
-        // Check if the message contains text
         if (isset($message['text'])) {
             $text = $message['text'];
 
@@ -54,12 +65,25 @@ class TelegramController extends Controller
                 $this->sendMessage($client, $chatId, $responseText);
             }
             if (strpos(strtolower($text), 'jacob') !== false) {
-                $response = $client->get('https://jsonplaceholder.typicode.com/posts/1');
-                $responseText = json_decode($response->getBody(), true)['title'];
+                $responseText = $this->getGeminiResponse($userName, $text);
                 $this->sendMessage($client, $chatId, $responseText);
             }
         } else {
             Log::info('Received message without text:', $message);
+        }
+    }
+
+    protected function getGeminiResponse($userName, $text)
+    {
+        try {
+            $response = $this->geminiClient->geminiPro()->generateContent(
+                new TextPart("Kamu adalah asisten virtual, tolong jawab text berikut dengan bahasa yang tidak kaku: " . $text)
+            );
+
+            return $response->text();
+        } catch (\Exception $e) {
+            Log::error("Gemini API request failed: " . $e->getMessage());
+            return "Maaf $userName, terjadi kesalahan saat menghubungi API Gemini.";
         }
     }
 
