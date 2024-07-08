@@ -77,7 +77,7 @@ class TelegramController extends Controller
     {
         try {
             $response = $this->geminiClient->geminiPro()->generateContent(
-                new TextPart("Kamu adalah asisten virtual, tolong jawab text berikut dengan bahasa yang tidak kaku: " . $text)
+                new TextPart("Kamu adalah asisten virtual bernama jacob, tolong jawab text berikut dengan bahasa yang tidak kaku: " . $text ."dan yang mengirim pesan adalah ". $userName." panggil namanya dan tambahkan emot diakhir chat")
             );
 
             return $response->text();
