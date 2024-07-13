@@ -17,7 +17,7 @@ class TelegramController extends Controller
     {
         $telegramApiToken = getenv('TELEGRAM_API_URL');
         $this->geminiApiKey = getenv('GEMINI_API_KEY');
-        
+
         if ($telegramApiToken === false) {
             throw new \Exception("TELEGRAM_API_URL environment variable is not set.");
         }
@@ -107,7 +107,7 @@ class TelegramController extends Controller
     {
         try {
             $response = $this->geminiClient->geminiPro()->generateContent(
-                new TextPart("Kamu adalah asisten virtual bernama jacob, tolong jawab text berikut dengan bahasa yang tidak kaku: " . $text ."dan yang mengirim pesan adalah ". $userName." panggil namanya dengan panggilan kak dan tambahkan emot diakhir chat seta balas dalam 1 response saja.")
+                new TextPart("Kamu adalah asisten virtual bernama jacob, tolong jawab text berikut dengan bahasa yang tidak kaku: " . $text . "dan yang mengirim pesan adalah " . $userName . " panggil namanya dengan panggilan kak dan tambahkan emot diakhir chat seta balas dalam 1 response saja.")
             );
 
             return $response->text();
@@ -129,23 +129,34 @@ class TelegramController extends Controller
 
     protected function sendWebAppButton($client, $chatId)
     {
-        $client->post($this->telegramApiUrl . 'sendMessage', [
-            'json' => [
-                'chat_id' => $chatId,
-                'text' => 'Open the Web App:',
-                'reply_markup' => [
-                    'inline_keyboard' => [
+        $payload = [
+            'chat_id' => $chatId,
+            'text' => 'Open the Web App:',
+            'reply_markup' => [
+                'inline_keyboard' => [
+                    [
                         [
-                            [
-                                'text' => 'Open Web App',
-                                'web_app' => [
-                                    'url' => 'https://jacobshop.adiyatan.com/' // Replace with your web app URL
-                                ]
+                            'text' => 'Open Web App',
+                            'web_app' => [
+                                'url' => 'https://jacobshop.adiyatan.com/' // Replace with your web app URL
                             ]
                         ]
                     ]
                 ]
             ]
-        ]);
+        ];
+
+        // Log the payload for debugging
+        Log::info('Sending Web App button with payload:', $payload);
+
+        try {
+            $response = $client->post($this->telegramApiUrl . 'sendMessage', [
+                'json' => $payload
+            ]);
+
+            Log::info('Web App button response:', json_decode($response->getBody(), true));
+        } catch (\Exception $e) {
+            Log::error("Failed to send Web App button: " . $e->getMessage());
+        }
     }
 }
