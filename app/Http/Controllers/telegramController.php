@@ -46,6 +46,8 @@ class TelegramController extends Controller
 
         if (isset($update['message'])) {
             $this->handleMessage($update['message']);
+        } elseif (isset($update['callback_query'])) {
+            $this->handleCallbackQuery($update['callback_query']);
         }
 
         return response()->json(['status' => 'success']);
@@ -63,21 +65,49 @@ class TelegramController extends Controller
             if ($text === '/chekgrupID') {
                 $responseText = 'The group ID is: ' . $chatId;
                 $this->sendMessage($client, $chatId, $responseText);
-            }
-            if (strpos(strtolower($text), 'jacob') !== false) {
+            } elseif (strpos(strtolower($text), 'jacob') !== false) {
                 $responseText = $this->getGeminiResponse($userName, $text);
                 $this->sendMessage($client, $chatId, $responseText);
+            } elseif ($text === '/startwebapp') {
+                $this->sendWebAppButton($client, $chatId);
             }
         } else {
             Log::info('Received message without text:', $message);
         }
     }
 
+    protected function handleCallbackQuery($callbackQuery)
+    {
+        $client = new \GuzzleHttp\Client();
+        $callbackQueryId = $callbackQuery['id'];
+        $callbackData = $callbackQuery['data'];
+        $chatId = $callbackQuery['message']['chat']['id'];
+
+        if ($callbackData === 'absen_makan') {
+            $this->answerCallbackQuery($client, $callbackQueryId, 'Anda memilih Absen Makan. Klik OK untuk melanjutkan.');
+        } elseif ($callbackData === 'menu_makan') {
+            $this->answerCallbackQuery($client, $callbackQueryId, 'Anda memilih Menu Makan. Klik OK untuk melanjutkan.');
+        } elseif ($callbackData === 'close') {
+            $this->answerCallbackQuery($client, $callbackQueryId, 'Pilihan telah ditutup.');
+        }
+    }
+
+    protected function answerCallbackQuery($client, $callbackQueryId, $text)
+    {
+        $client->post($this->telegramApiUrl . 'answerCallbackQuery', [
+            'json' => [
+                'callback_query_id' => $callbackQueryId,
+                'text' => $text,
+                'show_alert' => true
+            ]
+        ]);
+    }
+
     protected function getGeminiResponse($userName, $text)
     {
         try {
             $response = $this->geminiClient->geminiPro()->generateContent(
-                new TextPart("Kamu adalah asisten virtual bernama jacob, tolong jawab text berikut dengan bahasa yang tidak kaku: " . $text ."dan yang mengirim pesan adalah ". $userName." panggil namanya dan tambahkan emot diakhir chat")
+                new TextPart("Kamu adalah asisten virtual bernama jacob, tolong jawab text berikut dengan bahasa yang tidak kaku: " . $text ."dan yang mengirim pesan adalah ". $userName." panggil namanya dengan panggilan kak dan tambahkan emot diakhir chat seta balas dalam 1 response saja.")
             );
 
             return $response->text();
@@ -93,6 +123,28 @@ class TelegramController extends Controller
             'json' => [
                 'chat_id' => $chatId,
                 'text' => $text
+            ]
+        ]);
+    }
+
+    protected function sendWebAppButton($client, $chatId)
+    {
+        $client->post($this->telegramApiUrl . 'sendMessage', [
+            'json' => [
+                'chat_id' => $chatId,
+                'text' => 'Open the Web App:',
+                'reply_markup' => [
+                    'inline_keyboard' => [
+                        [
+                            [
+                                'text' => 'Open Web App',
+                                'web_app' => [
+                                    'url' => 'https://jacobshop.adiyatan.com/' // Replace with your web app URL
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
             ]
         ]);
     }
