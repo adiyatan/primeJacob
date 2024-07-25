@@ -36,7 +36,7 @@ class CloseDailyPolls extends Command
         $apiToken = env('TELEGRAM_API_URL');
         $apiUrl = "https://api.telegram.org/bot$apiToken/";
         $client = new Client(['base_uri' => $apiUrl]);
-        $chatId = "-4267585793";
+        $chatId = "-1001309342664";
 
         $today = Carbon::today()->toDateString();
         $dayOfWeek = Carbon::now()->dayOfWeek;
@@ -69,6 +69,7 @@ class CloseDailyPolls extends Command
 
         $message = "Total voters for lunch: $totalVoters\nTotal amount: $totalAmount\nRemaining budget: $remainingBudget";
         $this->sendMessage($client, $chatId, $message);
+        $this->sendMessage($client, $chatId, "generate spreed budget");
 
         if ($dayOfWeek == Carbon::FRIDAY) {
             $this->calculateWeeklyBudget($client, $chatId);

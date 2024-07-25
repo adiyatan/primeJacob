@@ -33,10 +33,11 @@ class MakanSiangCimahi extends Command
         $apiUrl = "https://api.telegram.org/bot$apiToken/";
         $client = new Client(['base_uri' => $apiUrl]);
 
-        $chatId = "-4267585793";
+        $chatId = "-1001309342664";
         $tanggalHariIni = date('Y-m-d');
-        $question = "Absen Makan {$tanggalHariIni}";
-        $options = $this->getHariIniOptions();
+        $question = "Cek {$tanggalHariIni}";
+        // $options = $this->getHariIniOptions();
+        $options = ["iya", "jgn isi disini"];
 
         if ($this->shouldSendPollToday()) {
             $response = $this->sendPoll($client, $chatId, $question, $options);

@@ -60,17 +60,26 @@ class TelegramController extends Controller
 
     protected function logPollData($poll)
     {
-        $pollData = PollData::updateOrCreate(
-            ['poll_id' => $poll['id']],
-            [
+        $existingPoll = PollData::where('poll_id', $poll['id'])->first();
+
+        if ($existingPoll) {
+            $existingPoll->update([
                 'options' => json_encode($poll['options']),
                 'total_voter_count' => $poll['total_voter_count'],
-                'date' => now(),
-                'chat_id' => $this->getChatIdByPollId($poll['id']),
-            ]
-        );
-
-        Log::info('Poll data logged:', ['poll_id' => $poll['id'], 'options' => $poll['options']]);
+                'date' => $poll['close_date'],
+                'chat_id' => $poll['chat']['id'] ?? null,
+                'first_name' => $poll['chat']['first_name'] ?? null
+            ]);
+        } else {
+            PollData::create([
+                'poll_id' => $poll['id'],
+                'options' => json_encode($poll['options']),
+                'total_voter_count' => $poll['total_voter_count'],
+                'date' => $poll['close_date'],
+                'chat_id' => $poll['chat']['id'] ?? null,
+                'first_name' => $poll['chat']['first_name'] ?? null
+            ]);
+        }
     }
 
     protected function getChatIdByPollId($pollId)
