@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Log;
 use GeminiAPI\Client;
 use GeminiAPI\Resources\Parts\TextPart;
 use App\Models\PollData;
+use Illuminate\Support\Facades\DB;
 
 class TelegramController extends Controller
 {
@@ -66,6 +67,11 @@ class TelegramController extends Controller
             'date' => now(),
             'chat_id' => $this->getChatIdByPollId($poll['id']),
         ]);
+    }
+
+    protected function getChatIdByPollId($pollId)
+    {
+        return DB::table('poll_data')->where('poll_id', $pollId)->whereNotNull('chat_id')->value('chat_id');
     }
 
     protected function handleMessage($message)
