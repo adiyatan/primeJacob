@@ -42,7 +42,6 @@ class CloseDailyPolls extends Command
         $chatId = "-1001309342664";
 
         $today = Carbon::today()->toDateString();
-        $dayOfWeek = Carbon::now()->dayOfWeek;
 
         $polls = PollData::where('date', $today)->get();
 
@@ -70,15 +69,11 @@ class CloseDailyPolls extends Command
             'remaining_budget' => $remainingBudget,
         ]);
 
-        $message = "Total voters for lunch: $totalVoters\nTotal amount: $totalAmount\nRemaining budget: $remainingBudget";
+        $formattedTotalAmount = number_format($totalAmount, 0, ',', '.');
+        $formattedRemainingBudget = number_format($remainingBudget, 0, ',', '.');
+
+        $message = "Total voters for lunch: $totalVoters\nTotal amount: Rp $formattedTotalAmount\nRemaining budget: Rp $formattedRemainingBudget";
         $this->sendMessage($client, $chatId, $message);
-        $this->sendMessage($client, $chatId, "generate spread budget");
-
-        if ($dayOfWeek == Carbon::FRIDAY) {
-            $this->calculateWeeklyBudget($client, $chatId);
-        }
-
-        $this->generateAndSendExcel($client, $chatId);
 
         return 0;
     }
@@ -106,90 +101,6 @@ class CloseDailyPolls extends Command
         $remainingBudget = $lastBudget ? $lastBudget->remaining_budget - $totalAmount : 0;
 
         return $remainingBudget;
-    }
-
-    private function calculateWeeklyBudget($client, $chatId)
-    {
-        $startDate = Carbon::now()->startOfWeek()->toDateString();
-        $endDate = Carbon::now()->endOfWeek()->toDateString();
-
-        $dailyBudgets = BudgetDaily::whereBetween('tanggal', [$startDate, $endDate])->get();
-
-        $totalBudget = 0;
-        $actualCost = 0;
-
-        foreach ($dailyBudgets as $dailyBudget) {
-            $totalBudget += $dailyBudget->total_amount;
-            $actualCost += $dailyBudget->total_amount;
-        }
-
-        $remainingBudget = $totalBudget - $actualCost;
-
-        BudgetWeekly::create([
-            'start_date' => $startDate,
-            'end_date' => $endDate,
-            'total_budget' => $totalBudget,
-            'remaining_budget' => $remainingBudget,
-        ]);
-
-        $message = "Weekly total budget: $totalBudget\nWeekly actual cost: $actualCost\nWeekly remaining budget: $remainingBudget";
-        $this->sendMessage($client, $chatId, $message);
-    }
-
-    private function generateAndSendExcel($client, $chatId)
-    {
-        $filePath = storage_path('app/budget_daily.xlsx');
-        $this->generateExcel($filePath);
-
-        try {
-            $client->post('sendDocument', [
-                'multipart' => [
-                    [
-                        'name'     => 'chat_id',
-                        'contents' => $chatId
-                    ],
-                    [
-                        'name'     => 'document',
-                        'contents' => fopen($filePath, 'r')
-                    ]
-                ]
-            ]);
-        } catch (\Exception $e) {
-            $this->error('Error sending Excel file: ' . $e->getMessage());
-        }
-    }
-
-    private function generateExcel($filePath)
-    {
-        $spreadsheet = new Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
-        
-        // Set the headings
-        $sheet->setCellValue('A1', 'ID');
-        $sheet->setCellValue('B1', 'Tanggal');
-        $sheet->setCellValue('C1', 'Total Voters');
-        $sheet->setCellValue('D1', 'Total Amount');
-        $sheet->setCellValue('E1', 'Remaining Budget');
-        $sheet->setCellValue('F1', 'Created At');
-        $sheet->setCellValue('G1', 'Updated At');
-        
-        // Fetch the data
-        $budgets = BudgetDaily::all();
-        $row = 2;
-        
-        foreach ($budgets as $budget) {
-            $sheet->setCellValue('A' . $row, $budget->id);
-            $sheet->setCellValue('B' . $row, $budget->tanggal);
-            $sheet->setCellValue('C' . $row, $budget->total_voters);
-            $sheet->setCellValue('D' . $row, $budget->total_amount);
-            $sheet->setCellValue('E' . $row, $budget->remaining_budget);
-            $sheet->setCellValue('F' . $row, $budget->created_at);
-            $sheet->setCellValue('G' . $row, $budget->updated_at);
-            $row++;
-        }
-        
-        $writer = new Xlsx($spreadsheet);
-        $writer->save($filePath);
     }
 
     private function sendMessage($client, $chatId, $message)

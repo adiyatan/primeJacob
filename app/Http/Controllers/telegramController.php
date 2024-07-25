@@ -63,28 +63,36 @@ class TelegramController extends Controller
 
     protected function logPollData($poll)
     {
-        DB::table('poll_data')->insert([
-            'poll_id' => $poll['id'],
-            'options' => json_encode($poll['options']),
-            'total_voter_count' => $poll['total_voter_count'],
-            'date' => now(),
-            'chat_id' => $this->getChatIdByPollId($poll['id']),
-        ]);
+        $exists = DB::table('poll_data')->where('poll_id', $poll['id'])->exists();
+        if (!$exists) {
+            DB::table('poll_data')->insert([
+                'poll_id' => $poll['id'],
+                'options' => json_encode($poll['options']),
+                'total_voter_count' => $poll['total_voter_count'],
+                'date' => now(),
+                'chat_id' => $this->getChatIdByPollId($poll['id']),
+            ]);
+        } else {
+            Log::info("Poll data with ID {$poll['id']} already exists.");
+        }
     }
 
     protected function logPollAnswer($pollAnswer)
     {
         $pollId = $pollAnswer['poll_id'];
         $firstName = $pollAnswer['user']['first_name'];
-        $date = now();
-        $options = json_encode($pollAnswer['option_ids']);
 
-        PollData::create([
-            'poll_id' => $pollId,
-            'first_name' => $firstName,
-            'date' => $date,
-            'options' => $options
-        ]);
+        $exists = PollData::where('poll_id', $pollId)->where('first_name', $firstName)->exists();
+        if (!$exists) {
+            PollData::create([
+                'poll_id' => $pollId,
+                'first_name' => $firstName,
+                'date' => now(),
+                'options' => json_encode($pollAnswer['option_ids']),
+            ]);
+        } else {
+            Log::info("Poll answer for poll ID $pollId and user $firstName already exists.");
+        }
     }
 
     protected function getChatIdByPollId($pollId)
