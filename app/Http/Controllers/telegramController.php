@@ -60,13 +60,17 @@ class TelegramController extends Controller
 
     protected function logPollData($poll)
     {
-        PollData::create([
-            'poll_id' => $poll['id'],
-            'options' => json_encode($poll['options']),
-            'total_voter_count' => $poll['total_voter_count'],
-            'date' => now(),
-            'chat_id' => $this->getChatIdByPollId($poll['id']),
-        ]);
+        $pollData = PollData::updateOrCreate(
+            ['poll_id' => $poll['id']],
+            [
+                'options' => json_encode($poll['options']),
+                'total_voter_count' => $poll['total_voter_count'],
+                'date' => now(),
+                'chat_id' => $this->getChatIdByPollId($poll['id']),
+            ]
+        );
+
+        Log::info('Poll data logged:', ['poll_id' => $poll['id'], 'options' => $poll['options']]);
     }
 
     protected function getChatIdByPollId($pollId)

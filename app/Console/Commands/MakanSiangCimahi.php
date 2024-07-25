@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 use Exception;
 use Illuminate\Console\Command;
 use GuzzleHttp\Client;
-use App\Models\DailyPoll;
+use App\Models\PollData;
 
 class MakanSiangCimahi extends Command
 {
@@ -42,7 +42,7 @@ class MakanSiangCimahi extends Command
             $response = $this->sendPoll($client, $chatId, $question, $options);
 
             if ($response && isset($response['result']['message_id'])) {
-                $this->savePollData($chatId, $response['result']['message_id'], $tanggalHariIni);
+                $this->savePollData($chatId, $response, $tanggalHariIni);
             }
         }
 
@@ -94,12 +94,15 @@ class MakanSiangCimahi extends Command
         return !in_array($hariIni, ['Sunday', 'Saturday']);
     }
 
-    private function savePollData($chatId, $messageId, $tanggal)
+    private function savePollData($chatId, $response, $tanggal)
     {
         try {
-            DailyPoll::create([
+            PollData::create([
                 'chat_id' => $chatId,
-                'message_id' => $messageId,
+                'message_id' => $response['result']['message_id'],
+                'poll_id' => $response['result']['poll']['id'],
+                'options' => json_encode($response['result']['poll']['options']),
+                'total_voter_count' => $response['result']['poll']['total_voter_count'],
                 'tanggal' => $tanggal,
             ]);
             echo 'Poll data saved successfully.';
