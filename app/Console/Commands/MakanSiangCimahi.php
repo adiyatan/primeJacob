@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Console\Commands;
 
 use Exception;
@@ -35,9 +36,8 @@ class MakanSiangCimahi extends Command
 
         $chatId = "-1001309342664";
         $tanggalHariIni = date('Y-m-d');
-        $question = "Cek {$tanggalHariIni}";
-        // $options = $this->getHariIniOptions();
-        $options = ["iya", "jgn isi disini"];
+        $question = "Absensi Kantor Cimahi {$tanggalHariIni}";
+        $options = $this->getHariIniOptions();
 
         if ($this->shouldSendPollToday()) {
             $response = $this->sendPoll($client, $chatId, $question, $options);

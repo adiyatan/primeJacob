@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('message_id')->nullable();
             $table->string('first_name')->nullable();
             $table->json('options');
-            $table->integer('total_voter_count');
+            $table->integer('total_voter_count')->nullable();
             $table->timestamp('date')->nullable();
             $table->timestamps();
         });

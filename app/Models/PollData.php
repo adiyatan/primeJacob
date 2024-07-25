@@ -17,7 +17,8 @@ class PollData extends Model
         'total_voter_count',
         'date',
         'chat_id',
-        'message_id'
+        'message_id',
+        'first_name'
     ];
 
     protected $casts = [

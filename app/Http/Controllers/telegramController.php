@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
@@ -47,6 +48,8 @@ class TelegramController extends Controller
 
         if (isset($update['poll'])) {
             $this->logPollData($update['poll']);
+        } elseif (isset($update['poll_answer'])) {
+            $this->logPollAnswer($update['poll_answer']);
         }
 
         if (isset($update['message'])) {
@@ -60,26 +63,28 @@ class TelegramController extends Controller
 
     protected function logPollData($poll)
     {
-        $existingPoll = PollData::where('poll_id', $poll['id'])->first();
+        DB::table('poll_data')->insert([
+            'poll_id' => $poll['id'],
+            'options' => json_encode($poll['options']),
+            'total_voter_count' => $poll['total_voter_count'],
+            'date' => now(),
+            'chat_id' => $this->getChatIdByPollId($poll['id']),
+        ]);
+    }
 
-        if ($existingPoll) {
-            $existingPoll->update([
-                'options' => json_encode($poll['options']),
-                'total_voter_count' => $poll['total_voter_count'],
-                'date' => $poll['close_date'],
-                'chat_id' => $poll['chat']['id'] ?? null,
-                'first_name' => $poll['chat']['first_name'] ?? null
-            ]);
-        } else {
-            PollData::create([
-                'poll_id' => $poll['id'],
-                'options' => json_encode($poll['options']),
-                'total_voter_count' => $poll['total_voter_count'],
-                'date' => $poll['close_date'],
-                'chat_id' => $poll['chat']['id'] ?? null,
-                'first_name' => $poll['chat']['first_name'] ?? null
-            ]);
-        }
+    protected function logPollAnswer($pollAnswer)
+    {
+        $pollId = $pollAnswer['poll_id'];
+        $firstName = $pollAnswer['user']['first_name'];
+        $date = now();
+        $options = json_encode($pollAnswer['option_ids']);
+
+        PollData::create([
+            'poll_id' => $pollId,
+            'first_name' => $firstName,
+            'date' => $date,
+            'options' => $options
+        ]);
     }
 
     protected function getChatIdByPollId($pollId)

@@ -9,6 +9,9 @@ use App\Models\BudgetDaily;
 use App\Models\BudgetWeekly;
 use App\Models\PollData;
 use Carbon\Carbon;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Illuminate\Support\Facades\Storage;
 
 class CloseDailyPolls extends Command
 {
@@ -69,11 +72,13 @@ class CloseDailyPolls extends Command
 
         $message = "Total voters for lunch: $totalVoters\nTotal amount: $totalAmount\nRemaining budget: $remainingBudget";
         $this->sendMessage($client, $chatId, $message);
-        $this->sendMessage($client, $chatId, "generate spreed budget");
+        $this->sendMessage($client, $chatId, "generate spread budget");
 
         if ($dayOfWeek == Carbon::FRIDAY) {
             $this->calculateWeeklyBudget($client, $chatId);
         }
+
+        $this->generateAndSendExcel($client, $chatId);
 
         return 0;
     }
@@ -129,6 +134,62 @@ class CloseDailyPolls extends Command
 
         $message = "Weekly total budget: $totalBudget\nWeekly actual cost: $actualCost\nWeekly remaining budget: $remainingBudget";
         $this->sendMessage($client, $chatId, $message);
+    }
+
+    private function generateAndSendExcel($client, $chatId)
+    {
+        $filePath = storage_path('app/budget_daily.xlsx');
+        $this->generateExcel($filePath);
+
+        try {
+            $client->post('sendDocument', [
+                'multipart' => [
+                    [
+                        'name'     => 'chat_id',
+                        'contents' => $chatId
+                    ],
+                    [
+                        'name'     => 'document',
+                        'contents' => fopen($filePath, 'r')
+                    ]
+                ]
+            ]);
+        } catch (\Exception $e) {
+            $this->error('Error sending Excel file: ' . $e->getMessage());
+        }
+    }
+
+    private function generateExcel($filePath)
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        
+        // Set the headings
+        $sheet->setCellValue('A1', 'ID');
+        $sheet->setCellValue('B1', 'Tanggal');
+        $sheet->setCellValue('C1', 'Total Voters');
+        $sheet->setCellValue('D1', 'Total Amount');
+        $sheet->setCellValue('E1', 'Remaining Budget');
+        $sheet->setCellValue('F1', 'Created At');
+        $sheet->setCellValue('G1', 'Updated At');
+        
+        // Fetch the data
+        $budgets = BudgetDaily::all();
+        $row = 2;
+        
+        foreach ($budgets as $budget) {
+            $sheet->setCellValue('A' . $row, $budget->id);
+            $sheet->setCellValue('B' . $row, $budget->tanggal);
+            $sheet->setCellValue('C' . $row, $budget->total_voters);
+            $sheet->setCellValue('D' . $row, $budget->total_amount);
+            $sheet->setCellValue('E' . $row, $budget->remaining_budget);
+            $sheet->setCellValue('F' . $row, $budget->created_at);
+            $sheet->setCellValue('G' . $row, $budget->updated_at);
+            $row++;
+        }
+        
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($filePath);
     }
 
     private function sendMessage($client, $chatId, $message)
