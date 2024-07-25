@@ -64,7 +64,7 @@ class MakanSiangCimahi extends Command
                     'is_anonymous' => false
                 ]
             ]);
-            echo $response->getBody()->getContents();
+
             return json_decode($response->getBody(), true);
         } catch (Exception $e) {
             echo 'Error sending poll: ' . $e->getMessage();
