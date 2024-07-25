@@ -7,6 +7,7 @@ use GuzzleHttp\Client;
 use App\Models\DailyPoll;
 use App\Models\BudgetDaily;
 use App\Models\BudgetWeekly;
+use App\Models\PollData;
 use Carbon\Carbon;
 
 class CloseDailyPolls extends Command
@@ -40,7 +41,7 @@ class CloseDailyPolls extends Command
         $today = Carbon::today()->toDateString();
         $dayOfWeek = Carbon::now()->dayOfWeek;
 
-        $polls = DailyPoll::where('tanggal', $today)->get();
+        $polls = PollData::where('date', $today)->get();
 
         $totalVoters = 0;
 

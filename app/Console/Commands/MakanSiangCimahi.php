@@ -103,7 +103,7 @@ class MakanSiangCimahi extends Command
                 'poll_id' => $response['result']['poll']['id'],
                 'options' => json_encode($response['result']['poll']['options']),
                 'total_voter_count' => $response['result']['poll']['total_voter_count'],
-                'tanggal' => $tanggal,
+                'date' => $tanggal,
             ]);
             echo 'Poll data saved successfully.';
         } catch (Exception $e) {
