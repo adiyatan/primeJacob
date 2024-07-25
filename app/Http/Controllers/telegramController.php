@@ -26,7 +26,7 @@ class TelegramController extends Controller
         }
 
         $this->telegramApiUrl = "https://api.telegram.org/bot$telegramApiToken/";
-        $this->geminiClient = new Client($this->geminiApiKey); // Initialize Gemini client
+        $this->geminiClient = new Client($this->geminiApiKey);
     }
 
     public function setWebhook()
@@ -76,22 +76,6 @@ class TelegramController extends Controller
         }
     }
 
-    protected function handleCallbackQuery($callbackQuery)
-    {
-        $client = new \GuzzleHttp\Client();
-        $callbackQueryId = $callbackQuery['id'];
-        $callbackData = $callbackQuery['data'];
-        $chatId = $callbackQuery['message']['chat']['id'];
-
-        if ($callbackData === 'absen_makan') {
-            $this->answerCallbackQuery($client, $callbackQueryId, 'Anda memilih Absen Makan. Klik OK untuk melanjutkan.');
-        } elseif ($callbackData === 'menu_makan') {
-            $this->answerCallbackQuery($client, $callbackQueryId, 'Anda memilih Menu Makan. Klik OK untuk melanjutkan.');
-        } elseif ($callbackData === 'close') {
-            $this->answerCallbackQuery($client, $callbackQueryId, 'Pilihan telah ditutup.');
-        }
-    }
-
     protected function answerCallbackQuery($client, $callbackQueryId, $text)
     {
         $client->post($this->telegramApiUrl . 'answerCallbackQuery', [
@@ -125,38 +109,5 @@ class TelegramController extends Controller
                 'text' => $text
             ]
         ]);
-    }
-
-    protected function sendWebAppButton($client, $chatId)
-    {
-        $payload = [
-            'chat_id' => $chatId,
-            'text' => 'Open the Web App:',
-            'reply_markup' => [
-                'inline_keyboard' => [
-                    [
-                        [
-                            'text' => 'Open Web App',
-                            'web_app' => [
-                                'url' => 'https://jacobshop.adiyatan.com/' // Replace with your web app URL
-                            ]
-                        ]
-                    ]
-                ]
-            ]
-        ];
-
-        // Log the payload for debugging
-        Log::info('Sending Web App button with payload:', $payload);
-
-        try {
-            $response = $client->post($this->telegramApiUrl . 'sendMessage', [
-                'json' => $payload
-            ]);
-
-            Log::info('Web App button response:', json_decode($response->getBody(), true));
-        } catch (\Exception $e) {
-            Log::error("Failed to send Web App button: " . $e->getMessage());
-        }
     }
 }
