@@ -83,8 +83,6 @@ class TelegramController extends Controller
             } elseif (strpos(strtolower($text), 'jacob') !== false) {
                 $responseText = $this->getGeminiResponse($userName, $text);
                 $this->sendMessage($client, $chatId, $responseText);
-            } elseif ($text === '/startwebapp') {
-                $this->sendWebAppButton($client, $chatId);
             }
         } else {
             Log::info('Received message without text:', $message);
