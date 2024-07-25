@@ -1,10 +1,10 @@
 <?php
-
 namespace App\Console\Commands;
 
 use Exception;
 use Illuminate\Console\Command;
 use GuzzleHttp\Client;
+use App\Models\DailyPoll;
 
 class MakanSiangCimahi extends Command
 {
@@ -39,7 +39,11 @@ class MakanSiangCimahi extends Command
         $options = $this->getHariIniOptions();
 
         if ($this->shouldSendPollToday()) {
-            $this->sendPoll($client, $chatId, $question, $options);
+            $response = $this->sendPoll($client, $chatId, $question, $options);
+
+            if ($response && isset($response['result']['message_id'])) {
+                $this->savePollData($chatId, $response['result']['message_id'], $tanggalHariIni);
+            }
         }
 
         $client->post('setWebhook', [
@@ -60,6 +64,7 @@ class MakanSiangCimahi extends Command
                     'is_anonymous' => false
                 ]
             ]);
+            echo $response->getBody()->getContents();
             return json_decode($response->getBody(), true);
         } catch (Exception $e) {
             echo 'Error sending poll: ' . $e->getMessage();
@@ -73,15 +78,13 @@ class MakanSiangCimahi extends Command
         switch ($hariIni) {
             case 'Monday':
             case 'Thursday':
-                return ["Hadir ke Kantor & Makan Siang", "Hadir ke Kantor tapi tidak makan siang", "Tidak hadir ke kantor
-                ", "puasa"];
+                return ["Hadir ke Kantor & Makan Siang", "Hadir ke Kantor tapi tidak makan siang", "Tidak hadir ke kantor", "puasa"];
             case 'Tuesday':
             case 'Wednesday':
             case 'Friday':
                 return ["iya", "tidak", "tidak tapi ke kantor"];
             default:
-                return ["Hadir ke Kantor & Makan Siang", "Hadir ke Kantor tapi tidak makan siang", "Tidak hadir ke kantor
-            "];
+                return ["Hadir ke Kantor & Makan Siang", "Hadir ke Kantor tapi tidak makan siang", "Tidak hadir ke kantor"];
         }
     }
 
@@ -89,5 +92,19 @@ class MakanSiangCimahi extends Command
     {
         $hariIni = date('l'); // Nama hari dalam bahasa Inggris
         return !in_array($hariIni, ['Sunday', 'Saturday']);
+    }
+
+    private function savePollData($chatId, $messageId, $tanggal)
+    {
+        try {
+            DailyPoll::create([
+                'chat_id' => $chatId,
+                'message_id' => $messageId,
+                'tanggal' => $tanggal,
+            ]);
+            echo 'Poll data saved successfully.';
+        } catch (Exception $e) {
+            echo 'Error saving poll data: ' . $e->getMessage();
+        }
     }
 }

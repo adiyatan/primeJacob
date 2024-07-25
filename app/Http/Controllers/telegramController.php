@@ -1,12 +1,11 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use GeminiAPI\Client;
 use GeminiAPI\Resources\Parts\TextPart;
-use Illuminate\Support\Facades\DB;
+use App\Models\PollData;
 
 class TelegramController extends Controller
 {
@@ -60,7 +59,7 @@ class TelegramController extends Controller
 
     protected function logPollData($poll)
     {
-        DB::table('poll_data')->insert([
+        PollData::create([
             'poll_id' => $poll['id'],
             'options' => json_encode($poll['options']),
             'total_voter_count' => $poll['total_voter_count'],
