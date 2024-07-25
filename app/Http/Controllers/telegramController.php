@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use GeminiAPI\Client;
 use GeminiAPI\Resources\Parts\TextPart;
+use Illuminate\Support\Facades\DB;
 
 class TelegramController extends Controller
 {
@@ -44,6 +45,10 @@ class TelegramController extends Controller
         $update = $request->all();
         Log::info('Webhook received:', $update);
 
+        if (isset($update['poll'])) {
+            $this->logPollData($update['poll']);
+        }
+
         if (isset($update['message'])) {
             $this->handleMessage($update['message']);
         } elseif (isset($update['callback_query'])) {
@@ -51,6 +56,17 @@ class TelegramController extends Controller
         }
 
         return response()->json(['status' => 'success']);
+    }
+
+    protected function logPollData($poll)
+    {
+        DB::table('poll_data')->insert([
+            'poll_id' => $poll['id'],
+            'options' => json_encode($poll['options']),
+            'total_voter_count' => $poll['total_voter_count'],
+            'date' => now(),
+            'chat_id' => $this->getChatIdByPollId($poll['id']),
+        ]);
     }
 
     protected function handleMessage($message)

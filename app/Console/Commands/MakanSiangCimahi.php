@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Console\Commands;
 
 use Exception;
@@ -32,7 +33,7 @@ class MakanSiangCimahi extends Command
         $apiUrl = "https://api.telegram.org/bot$apiToken/";
         $client = new Client(['base_uri' => $apiUrl]);
 
-        $chatId = "-1001309342664";
+        $chatId = "-4267585793";
         $tanggalHariIni = date('Y-m-d');
         $question = "Absen Makan {$tanggalHariIni}";
         $options = $this->getHariIniOptions();
@@ -72,13 +73,15 @@ class MakanSiangCimahi extends Command
         switch ($hariIni) {
             case 'Monday':
             case 'Thursday':
-                return ["iya", "tidak", "tidak tapi ke kantor", "puasa"];
+                return ["Hadir ke Kantor & Makan Siang", "Hadir ke Kantor tapi tidak makan siang", "Tidak hadir ke kantor
+                ", "puasa"];
             case 'Tuesday':
             case 'Wednesday':
             case 'Friday':
                 return ["iya", "tidak", "tidak tapi ke kantor"];
             default:
-                return ["aku", "tidak"];
+                return ["Hadir ke Kantor & Makan Siang", "Hadir ke Kantor tapi tidak makan siang", "Tidak hadir ke kantor
+            "];
         }
     }
 
