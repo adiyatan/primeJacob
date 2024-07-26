@@ -3,6 +3,7 @@
 namespace App\Console;
 
 use App\Console\Commands\CloseDailyPolls;
+use App\Console\Commands\ExportPollData;
 use App\Console\Commands\MakanSiangCimahi;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -12,5 +13,6 @@ class Kernel extends ConsoleKernel
         // Register the command here
         CloseDailyPolls::class,
         MakanSiangCimahi::class,
+        ExportPollData::class,
     ];
 }
