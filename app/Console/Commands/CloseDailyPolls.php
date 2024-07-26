@@ -42,7 +42,15 @@ class CloseDailyPolls extends Command
         $chatId = "-1001309342664";
 
         $today = Carbon::today()->toDateString();
-        $yesterday = Carbon::yesterday()->toDateString();
+        $yesterday = Carbon::yesterday();
+        
+        // Check if today is Monday, then get last Friday's date
+        if (Carbon::now()->isMonday()) {
+            $lastFriday = Carbon::now()->subDays(3)->toDateString();
+            $remainingBudget = $this->getRemainingBudget($lastFriday);
+        } else {
+            $remainingBudget = $this->getRemainingBudget($yesterday->toDateString());
+        }
 
         $polls = PollData::where('date', $today)->get();
 
@@ -61,22 +69,29 @@ class CloseDailyPolls extends Command
         }
 
         $totalAmount = $totalVoters * 20000;
-        $remainingBudget = $this->calculateRemainingBudget($totalAmount, $yesterday);
+
+        // Add yesterday's remaining budget (or last Friday's if today is Monday) to today's total amount
+        $totalAmount += $remainingBudget;
 
         BudgetDaily::create([
             'tanggal' => $today,
             'total_voters' => $totalVoters,
             'total_amount' => $totalAmount,
-            'remaining_budget' => $remainingBudget,
+            'remaining_budget' => 0,
         ]);
 
         $formattedTotalAmount = number_format($totalAmount, 0, ',', '.');
-        $formattedRemainingBudget = number_format($remainingBudget, 0, ',', '.');
 
-        $message = "Total voters for lunch: $totalVoters\nTotal amount: Rp $formattedTotalAmount\nRemaining budget: Rp $formattedRemainingBudget";
+        $message = "Total voters for lunch: $totalVoters\nTotal amount: Rp $formattedTotalAmount";
         $this->sendMessage($client, $chatId, $message);
 
         return 0;
+    }
+
+    private function getRemainingBudget($date)
+    {
+        $budget = BudgetDaily::where('tanggal', $date)->first();
+        return $budget ? $budget->remaining_budget : 0;
     }
 
     private function closePoll($client, $chatId, $messageId)
@@ -94,14 +109,6 @@ class CloseDailyPolls extends Command
             $this->error('Error closing poll: ' . $e->getMessage());
             return null;
         }
-    }
-
-    private function calculateRemainingBudget($totalAmount, $yesterday)
-    {
-        $lastBudget = BudgetDaily::where('tanggal', $yesterday)->orderBy('tanggal', 'desc')->first();
-        $remainingBudget = $lastBudget ? $lastBudget->remaining_budget - $totalAmount : 0;
-
-        return $remainingBudget;
     }
 
     private function sendMessage($client, $chatId, $message)
