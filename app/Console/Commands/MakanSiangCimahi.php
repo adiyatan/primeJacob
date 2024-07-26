@@ -83,9 +83,9 @@ class MakanSiangCimahi extends Command
             case 'Tuesday':
             case 'Wednesday':
             case 'Friday':
-                return ["iya", "tidak", "tidak tapi ke kantor"];
-            default:
                 return ["Hadir ke Kantor & Makan Siang", "Hadir ke Kantor tapi tidak makan siang", "Tidak hadir ke kantor"];
+            default:
+                return ["iya", "tidak", "tidak tapi ke kantor"];
         }
     }
 
