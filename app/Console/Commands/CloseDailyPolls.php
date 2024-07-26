@@ -42,6 +42,7 @@ class CloseDailyPolls extends Command
         $chatId = "-1001309342664";
 
         $today = Carbon::today()->toDateString();
+        $yesterday = Carbon::yesterday()->toDateString();
 
         $polls = PollData::where('date', $today)->get();
 
@@ -60,7 +61,7 @@ class CloseDailyPolls extends Command
         }
 
         $totalAmount = $totalVoters * 20000;
-        $remainingBudget = $this->calculateRemainingBudget($totalAmount);
+        $remainingBudget = $this->calculateRemainingBudget($totalAmount, $yesterday);
 
         BudgetDaily::create([
             'tanggal' => $today,
@@ -95,9 +96,9 @@ class CloseDailyPolls extends Command
         }
     }
 
-    private function calculateRemainingBudget($totalAmount)
+    private function calculateRemainingBudget($totalAmount, $yesterday)
     {
-        $lastBudget = BudgetDaily::orderBy('tanggal', 'desc')->first();
+        $lastBudget = BudgetDaily::where('tanggal', $yesterday)->orderBy('tanggal', 'desc')->first();
         $remainingBudget = $lastBudget ? $lastBudget->remaining_budget - $totalAmount : 0;
 
         return $remainingBudget;
