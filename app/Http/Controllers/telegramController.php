@@ -82,16 +82,20 @@ class TelegramController extends Controller
         $pollId = $pollAnswer['poll_id'];
         $firstName = $pollAnswer['user']['first_name'];
 
-        $exists = PollData::where('poll_id', $pollId)->where('first_name', $firstName)->exists();
-        if (!$exists) {
+        $existingPollData = PollData::where('poll_id', $pollId)->where('first_name', $firstName)->first();
+
+        if ($existingPollData) {
+            $existingPollData->update([
+                'date' => now(),
+                'options' => json_encode($pollAnswer['option_ids']),
+            ]);
+        } else {
             PollData::create([
                 'poll_id' => $pollId,
                 'first_name' => $firstName,
                 'date' => now(),
                 'options' => json_encode($pollAnswer['option_ids']),
             ]);
-        } else {
-            Log::info("Poll answer for poll ID $pollId and user $firstName already exists.");
         }
     }
 
