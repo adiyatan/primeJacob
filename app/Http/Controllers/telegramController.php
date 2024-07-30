@@ -83,19 +83,22 @@ class TelegramController extends Controller
         $firstName = $pollAnswer['user']['first_name'];
 
         $existingPollData = PollData::where('poll_id', $pollId)->where('first_name', $firstName)->first();
+        $currentHour = now()->hour;
 
-        if ($existingPollData) {
-            $existingPollData->update([
-                'date' => now(),
-                'options' => json_encode($pollAnswer['option_ids']),
-            ]);
-        } else {
-            PollData::create([
-                'poll_id' => $pollId,
-                'first_name' => $firstName,
-                'date' => now(),
-                'options' => json_encode($pollAnswer['option_ids']),
-            ]);
+        if ($currentHour <= 2) {
+            if ($existingPollData) {
+                $existingPollData->update([
+                    'date' => now(),
+                    'options' => json_encode($pollAnswer['option_ids']),
+                ]);
+            } else {
+                PollData::create([
+                    'poll_id' => $pollId,
+                    'first_name' => $firstName,
+                    'date' => now(),
+                    'options' => json_encode($pollAnswer['option_ids']),
+                ]);
+            }
         }
     }
 
