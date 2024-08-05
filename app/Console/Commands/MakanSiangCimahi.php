@@ -6,6 +6,8 @@ use Exception;
 use Illuminate\Console\Command;
 use GuzzleHttp\Client;
 use App\Models\PollData;
+use DateTime;
+use IntlDateFormatter;
 
 class MakanSiangCimahi extends Command
 {
@@ -35,8 +37,11 @@ class MakanSiangCimahi extends Command
         $client = new Client(['base_uri' => $apiUrl]);
 
         $chatId = "-1001309342664";
-        $tanggalHariIni = date('Y-m-d');
-        $question = "Absensi Kantor Cimahi {$tanggalHariIni}";
+        $locale = 'id_ID';
+        $formatter = new IntlDateFormatter($locale, IntlDateFormatter::LONG, IntlDateFormatter::NONE);   
+        $formatter->setPattern('d MMMM yyyy');
+        $tanggalHariIni = $formatter->format(new DateTime());
+        $question = "Rekap Kehadiran Tim Javan Cimahi Workspace {$tanggalHariIni}";
         $options = $this->getHariIniOptions();
 
         if ($this->shouldSendPollToday()) {
